@@ -1,105 +1,143 @@
-class Enemy{
-	int x = 0;
-	int y = 0;
-	int type;
-	int speed = 5;
+//================================================================================================================
+//================================================================================================================
 
-	PImage enemyImg;
-	Enemy(int x, int y, int type) {
-		this.x = x;
-		this.y = y;
-		this.type = type;
-		enemyImg = loadImage("img/enemy.png");
-		
-	}
-	void move() {
-		this.x+= 5;	
-	}
+class Enemy extends DrawingOBJ {
 
-	void draw()
-	{
-		image(enemyImg, x, y);
-	}
+  protected boolean isInTeam;
+  private Fighter target = null;
+  private Bullet[] bulletArray;
+  private GameDataChanged listener;
+  private int hp, maxHP, damage;
 
-	boolean isCollideWithFighter()
-	{
-		return false;
-	}
+  public Enemy(Bullet[] bulletArray, Fighter target, GameDataChanged listener, int level) {
+    super(60, 60, resourcesManager.get(ResourcesManager.enemy1), ObjType.ENEMY);
+    this.listener = listener;
+    this.target = target;
+    this.bulletArray = bulletArray;
+    isInTeam = false;
+    randomEnemy(true);
+    setSpeed((getSpeed() * (level/1000f+1)), 0);
+    maxHP = 1;
+    damage = 20;
+    hp = maxHP;
+  }
 
-	boolean isOutOfBorder()
-	{
-		return false;
-	}
+  public void setHpAndDamage(int maxHP, int damage) {
+    this.damage = damage;
+    this.maxHP = maxHP;
+    hp = maxHP;
+  }
 
+  public void setIsInTeam(boolean isInTeam) {
+    this.isInTeam = isInTeam;
+  }
 
-}
+  public void SpecialDraw() {
+  }
 
-void addEnemy(int type)
-{	
-	for (int i = 0; i < enemyCount; ++i) {
-		enemys[i] = null;
-	}
-	switch (type) {
-		case EnemysShowingType.STRAIGHT:
-			addStraightEnemy();
-			break;
-		case EnemysShowingType.SLOPE:
-			addSlopeEnemy();
-			break;
-		case EnemysShowingType.DIAMOND:
-			addDiamondEnemy();
-			break;
-		case EnemysShowingType.STRONGLINE:
-			addEnemyStrong();
-			break;
-	}
-	time = millis();
-}
+  public void doGameLogic() {
+    if (x < -objWidth) {
+      showAlarm();
+    } else {
+      normalMove();
+    }
+  }
 
-void addStraightEnemy()
-{
-	float t = random(height - 60);
-	int h = int(t);
-	for (int i = 0; i < 5; ++i) {
-		enemys[i] = new Enemy( (i+1)*-80, h , FlightType.ENEMY);
-	}
-}
-void addSlopeEnemy()
-{
-	float t = random(height - 60 * 5);
-	int h = int(t);
-	for (int i = 0; i < 5; ++i) {
-		enemys[i] = new Enemy((i+1)*-80, h + i * 50 , FlightType.ENEMY);
-	}
-}
-void addDiamondEnemy()
-{
-	float t = random( 60 * 3 ,height - 60 * 3);
-	int h = int(t);
-	int x_axis = 1;
-	for (int i = 0; i < 8; ++i) {
-		if (i == 0 || i == 7) {
-			enemys[i] = new Enemy((x_axis+1)*-80, h, FlightType.ENEMY);
-			x_axis++;
-		}
-		else if (i == 1 || i == 5){
-			enemys[i] = new Enemy((x_axis+1)*-80, h + 1 * 40, FlightType.ENEMY);
-			enemys[i+1] = new Enemy((x_axis+1)*-80, h - 1 * 40, FlightType.ENEMY);
-			i++;
-			x_axis++;
-			
-		}
-		else {
-			enemys[i] = new Enemy((x_axis+1)*-80, h + 2 * 40, FlightType.ENEMY);
-			enemys[i+1] = new Enemy((x_axis+1)*-80, h - 2 * 40, FlightType.ENEMY);
-			i++;
-			x_axis++;
-		}
-	}
-}
-void addEnemyStrong()
-{
-	for (int i = 0; i < 5; ++i) {
-		enemys[i] = new Enemy(0, 40+ i * 85, FlightType.ENEMYSTRONG);
-	}
+  public void updateLocation() {
+    if (x < -objWidth) {
+      x+=1;
+    } else {
+      super.updateLocation();
+    }
+  }
+
+  public boolean isOutOfBorder() {
+    int halfHeight = objHeight>>1;
+    return (y > (height - halfHeight)) || (y < halfHeight) || (x > width);
+  }
+
+  private boolean isCollideWithFighter(DrawingOBJ target) {
+    return this.isHitOBJ(target);
+  }
+
+  private void normalMove() {
+    // normal moves
+    if (!isInTeam) {
+      if (x < target.x) {
+        moveToOBJ(target);
+      } else {
+        moveToOBJ(this);
+      }
+    }
+    if (isCollideWithFighter(target)) {
+      if (listener != null) {
+        listener.subHP(damage, this);
+        listener.enemyMoveOut(this, false);
+      }
+    }
+    if (bulletArray!=null) {
+      for (int i=0; i<5; i++) {
+        Bullet target = bulletArray[i];
+        if (target.isHitOBJ(this)) {
+          hp --;
+          light = floor(255f / maxHP * hp);
+          if (hp <= 0) {
+            listener.enemyMoveOut(this, true);
+          }
+          target.setDisabled();
+          break;
+        }
+      }
+    }
+
+    if (listener != null) {
+      if (isOutOfBorder()) {
+        listener.enemyMoveOut(this, false);
+      }
+    }
+  }
+
+  private void showAlarm() {
+    // wait 100 times, show warning and speed 
+    float temp = (- objWidth - x);
+    if (temp < 100) {
+      int tSize = floor(20 * (1 - (- objWidth - x) / 100f) + 5);
+      textAlign(LEFT);
+      textSize(16);
+      // draw different color with different speed
+      float speed = getSpeed();
+      if (speed > 20 ) {
+        drawStrokeText(String.format("%.1f",speed), color(255, 0, 0), #ffffff, 25, floor(y+ 8), 1);
+      } else if (speed > 10) {
+        // 10 - 20 yellow to red
+        drawStrokeText(String.format("%.1f",speed), color(255, 255 - floor((speed-10)/10f * 255), 0), #ffffff, 25, floor(y+ 8), 1);
+      } else {
+        // 1 - 10 green to yellow
+        drawStrokeText(String.format("%.1f",speed), color(floor((speed)/10f * 255), 255, 0), #ffffff, 25, floor(y+ 8), 1);
+      }
+      textSize(tSize);
+      drawStrokeText("!", #ff0000, #ffffff, 10, floor(y + (tSize >> 1)), 1);
+    }
+  }
+
+  private void randomEnemy(boolean isAvoidFighter) {
+    x = -100 - objWidth;
+    float speed = floor(random(1, 5));
+    setSpeed(speed, 0);
+    do {
+      y = floor(random(0, height-40))+20;
+      // if need avoid fighter and enemy is in fighter line then random again
+    } while (isAvoidFighter && isInTargetLine(target));
+  }
+
+  private boolean isInTargetLine(Fighter obj) {
+    int yOffset = objHeight >> 1 ;
+    int yOffset1 = obj.objHeight >>1;
+    int top =floor(y + yOffset), bottom =floor(y - yOffset);
+    int tt =floor(obj.y + yOffset1), tb = floor(obj.y - yOffset1);
+    if ((bottom < tt)&&(top > tb)) {
+      return true;
+    }
+    return false;
+  }
 }
