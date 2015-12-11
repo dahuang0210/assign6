@@ -1,23 +1,42 @@
-class Treasure{
-	int x = 0;
-	int y = 0;
-	PImage treasureImg;
-	Treasure () {
-		this.treasureImg = loadImage("img/treasure.png");
-		this.randomPosition();
-	}
 
-	void randomPosition() {
-		this.x = int(random(0, width - this.treasureImg.width));
-		this.y = int(random(0, height - this.treasureImg.height));
-	}
+//================================================================================================================
+//================================================================================================================
 
-	void draw() {
-		image(this.treasureImg, this.x, this.y);
+class Treasure extends DrawingOBJ {
 
-		if (isHit(this.x, this.y, this.treasureImg.width, this.treasureImg.height, fighter.x, fighter.y, fighter.fighterImg.width, fighter.fighterImg.height)) {
-			fighter.hpValueChange(10);
-			this.randomPosition();
-		}
-	}
+  private Fighter target = null;
+  private GameDataChanged listener;
+
+  public Treasure(Fighter target, GameDataChanged listener) {
+    super(40, 40, resourcesManager.get(ResourcesManager.treasure), ObjType.TREASURE);
+    this.listener = listener;
+    this.target = target;
+    randomTreasure();
+  }
+
+  public void SpecialDraw() {
+  }
+
+  public void doGameLogic() {
+    if (target != null) {
+      if (isHitOBJ(target)) {
+        if (listener != null) {
+          listener.addHP(10);
+        }
+        randomTreasure();
+      }
+    }
+  }
+
+  /**
+   * to random an treasure
+   */
+  public void randomTreasure() {
+    // x is from 20 to 620
+    // y is from 20 to 460
+    do {
+      x = floor(random(width - 40)+20);
+      y = floor(random(height - 40)+20);
+    } while (isHitOBJ(target));
+  }
 }
