@@ -36,7 +36,7 @@ abstract class DrawingOBJ {
     zOrder = 0;
   }
 
-  public void setImage(PImage img){
+  public void setImage(PImage img) {
     this.img = img;
   }
 
@@ -202,6 +202,11 @@ abstract class DrawingOBJ {
     int halfWidth = objWidth >> 1;
     int halfHeight = objHeight >> 1;
     return (y > (height - halfHeight)) || (y < halfHeight) || (x > (width - halfWidth)) || (x < halfWidth);
+  }
+
+  public String formatValueWith1(float input) {
+    float temp = floor(input *10.0);
+    return "" + ( temp / 10);
   }
 
   abstract public void SpecialDraw();
