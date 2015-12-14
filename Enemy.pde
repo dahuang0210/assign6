@@ -107,13 +107,13 @@ class Enemy extends DrawingOBJ {
       // draw different color with different speed
       float speed = getSpeed();
       if (speed > 20 ) {
-        drawStrokeText(String.format("%.1f",speed), color(255, 0, 0), #ffffff, 25, floor(y+ 8), 1);
+        drawStrokeText(formatValueWith1(speed), color(255, 0, 0), #ffffff, 25, floor(y+ 8), 1);
       } else if (speed > 10) {
         // 10 - 20 yellow to red
-        drawStrokeText(String.format("%.1f",speed), color(255, 255 - floor((speed-10)/10f * 255), 0), #ffffff, 25, floor(y+ 8), 1);
+        drawStrokeText(formatValueWith1(speed), color(255, 255 - floor((speed-10)/10f * 255), 0), #ffffff, 25, floor(y+ 8), 1);
       } else {
         // 1 - 10 green to yellow
-        drawStrokeText(String.format("%.1f",speed), color(floor((speed)/10f * 255), 255, 0), #ffffff, 25, floor(y+ 8), 1);
+        drawStrokeText(formatValueWith1(speed), color(floor((speed)/10f * 255), 255, 0), #ffffff, 25, floor(y+ 8), 1);
       }
       textSize(tSize);
       drawStrokeText("!", #ff0000, #ffffff, 10, floor(y + (tSize >> 1)), 1);
