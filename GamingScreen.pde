@@ -177,7 +177,7 @@ class GamingScreen extends Screen implements KeyPressListener, GameDataChanged {
         addEnemyInTeam(0, border + offset * i, s, true);
       }
     }
-    if (++teamId>3) {
+    if (++teamId > 3) {
       teamId = 0;
     }
   }
