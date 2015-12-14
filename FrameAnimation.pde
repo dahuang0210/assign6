@@ -1,70 +1,67 @@
+
 //================================================================================================================
 //================================================================================================================
 
-class FrameAnimation extends DrawingOBJ {
+class GameEndScreen extends Screen implements MouseListener {
 
-  public int delay = 100;
+  public int level = 0;
+  private boolean isOnButton, isPressButton;
+  private int alpha, alpha_offset ;
 
-  private PImage[] expArray;
-  private int timer, shownID, frameCnt;
-  private GameDataChanged listener;
-  private DrawingOBJ targetOBJ;
-
-  private void initSystem(GameDataChanged listener, int startID, int frameCnt) {
-    this.listener = listener;
-    this.frameCnt = frameCnt;
-    setIsDrawSelf(false);
-    expArray = new PImage[frameCnt];
-    for (int i = 0; i<frameCnt; i++) {
-      expArray[i] = resourcesManager.get(startID + i);
-    }
-    timer = 0;
-    shownID = -1;
-  }
-
-  public FrameAnimation(GameDataChanged listener, int startID) {
-    super(64, 64, null, ObjType.TITLE);
-    initSystem(listener, startID, 5);
-  }
-
-  public FrameAnimation(GameDataChanged listener, int startID, int frameWidth, int frameHeight) {
-    super(frameWidth, frameHeight, null, ObjType.TITLE);
-    initSystem(listener, startID, 5);
-  }
-
-  public FrameAnimation(GameDataChanged listener, int startID, int frameWidth, int frameHeight, int frameCnt) {
-    super(frameWidth, frameHeight, null, ObjType.TITLE);
-    initSystem(listener, startID, frameCnt);
-  }
-
-  public void bindingOBJ(DrawingOBJ target) {
-    targetOBJ = target;
-    x = target.x;
-    y = target.y;
-    setSpeed(target.getXSpeed(),target.getYSpeed());
+  public GameEndScreen(ScreenChangeListener listener) {
+    super(resourcesManager.get(ResourcesManager.end2), listener);
+    isOnButton = false;
+    isPressButton = false;
   }
 
   public void SpecialDraw() {
-    if (shownID<frameCnt) {
-      image(expArray[shownID], x-(objWidth>>1), y-(objHeight>>1));
-    } else if (listener != null) {
-      listener.FrameAnimationFinished(this);
-    } else {
-      image(expArray[0], x-(objWidth>>1), y-(objHeight>>1));
-      timer = millis();
+    if (isOnButton && (! isPressButton)) {
+      tint(255, alpha);
+      image(resourcesManager.get(ResourcesManager.end1), 0, 0);
+      tint(255, 255);
+      alpha += alpha_offset;
+      if (alpha>255) {
+        alpha = 255;
+        alpha_offset = -alpha_offset;
+      } else if (alpha<100) {
+        alpha = 100;
+        alpha_offset = -alpha_offset;
+      }
     }
+    textAlign(CENTER);
+    textSize(30);
+    drawStrokeText("Final Score:"+level, #ffffff, #ff0000, 320, 220, 2);
   }
 
   public void doGameLogic() {
-    if (timer == 0 ) {
-      timer = millis();
-    }
-    shownID = floor((millis() - timer)/delay);
-    if (targetOBJ != null) {
-      if (targetOBJ.classID == ObjType.FIGHTER) {
-        x = targetOBJ.x;
-        y = targetOBJ.y;
+    setIsDrawSelf((!isOnButton) ||isPressButton);
+  }
+
+  public void drawFrame() {
+    doGameLogic();
+    image(resourcesManager.get(ResourcesManager.end2), 0, 0);
+    SpecialDraw();
+  }
+
+  public void mouseReleasedFun(int keyCode1) {
+    if (keyCode1 == MOUSE_LEFT) {
+      isPressButton = false;
+      if (isOnButton && listener != null) {
+        listener.restartGame();
       }
     }
+  }
+  public void mousePressedFun(int keyCode1) {
+    if (keyCode1 == MOUSE_LEFT) {
+      isPressButton = true;
+    }
+  }
+  public void mouseMovedFun(int x, int y) {
+    boolean newBool = isPointHitArea(x, y, 210, 310, 435, 345);
+    if (newBool!=isOnButton) {
+      alpha_offset = 10;
+      alpha = 0;
+    }
+    isOnButton =  newBool;
   }
 }
